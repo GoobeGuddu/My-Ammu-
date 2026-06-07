@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Ammu!</title>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+<style>
+html, body{
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    background:black;
+}
+canvas{
+    display:block;
+}
+</style>
+</head>
+<body>
+<script>
+const imgarr = [
+    "image/img1.jpeg",
+    "image/img2.jpeg",
+    "image/img3.jpeg",
+    "image/img4.jpeg",
+    "image/img5.jpeg",
+    "image/img6.jpeg",
+    "image/img8.jpeg",
+    "image/img7.jpeg",
+    "image/img9.jpeg",
+    "image/img10.jpeg",
+    "image/img12.jpeg",
+    "image/img13.jpeg",
+    "image/img14.jpeg",
+    "image/img16.jpeg",
+    "image/img17.jpeg",
+    "image/img18.jpeg",
+    "image/img19.jpeg",
+    "image/img20.jpeg",
+    "image/img21.jpeg"
+]
+const poem = [
+    "In these quiet sights, the dark skies",
+    "I just wish to see your smile",
+    "My days are gone by.....",
+    "without a sight of those bright,beautiful eyes",
+    "My mind lingers in your memories",
+    "My arms trying to find your respite",
+    "The warmth of your love...my heart commands",
+    "For a thousand roses won't be enough...",
+    "To paint the red of your love ❤️",
+    "For a thousand words aren't enough...",
+    "To descrie the beauty of your sight",
+    "My moments feel warmer under your shade",
+    "My dreams have become you...",
+    "My reality has always been you...",
+    "I wake up imagining you by my side",
+    "Us leading a quiet happy life",
+    "For I wish to be in comfort of your sight",
+    "For the rest of my waking life",
+    "And in death..I wish the respite of your sweet smile"
+]
+let imgpushed = []
+let imgindex = 0
+let particles = []
+let mode = "form"
+let timer = 0
+let showtext = false
+const blueprint = {
+    sharpness: 6,
+    formtime: 450,
+    stilltime: 780,
+    swarmtime: 780,
+    speed: 6
+}
+const textblueprint = {
+    sharpness: 3
+}
+function preload(){
+    for(const path of imgarr){
+        imgpushed.push(loadImage(path))
+    }
+}
+function setup(){
+    pixelDensity(1)
+    createCanvas(windowWidth, windowHeight)
+    background(0)
+    if(imgpushed.length){
+        createimg(imgpushed[0])
+    }
+}
+class particle{
+    constructor(x, y, r, g, b){
+        this.originx = x
+        this.originy = y
+        this.x = random(width)
+        this.y = random(height)
+        this.vx = random(-3, 3)
+        this.vy = random(-3, 3)
+        this.r = r
+        this.g = g
+        this.b = b
+        this.randval = random(TWO_PI)
+        this.edge = random()
+    }
+    update(t){
+        const distx = this.originx - this.x
+        const disty = this.originy - this.y
+        if(mode == "form"){
+            this.vx += distx * 0.0015
+            this.vy += disty * 0.0015
+        }
+        if(mode == "still"){
+            this.vx += distx * 0.0012
+            this.vy += disty * 0.0012
+        }
+        if(mode == "swarm"){
+            this.vx += sin(t + this.y * 0.01) * 0.08
+            this.vy += cos(t + this.x * 0.01) * 0.08
+            this.vx += distx * 0.00015
+            this.vy += disty * 0.00015
+        }
+        if(mode !== "still"){
+            this.vx += sin(t + this.originy * 0.02) * 0.03
+            this.vy += cos(t + this.originx * 0.02) * 0.03
+            if(this.edge < 0.15){
+                this.vx += random(-0.04, 0.04)
+                this.vy += random(-0.04, 0.04)
+            }
+        }
+        let mx = mouseX
+        let my = mouseY
+        let mdistx = this.x - mx
+        let mdisty = this.y - my
+        let mdist = mdistx * mdistx + mdisty * mdisty
+        let radius = 120
+        if(mdist < radius * radius){
+            let dist = sqrt(mdist)
+            if(dist > 0){
+                let force = (radius - dist) / radius
+                this.vx += (mdistx / dist) * force * 1.2
+                this.vy += (mdisty / dist) * force * 1.2
+            }
+        }
+        const speed = sqrt(this.vx * this.vx + this.vy * this.vy)
+        if(speed > blueprint.speed){
+            this.vx = (this.vx / speed) * blueprint.speed
+            this.vy = (this.vy / speed) * blueprint.speed
+        }
+        this.vx *= 0.97
+        this.vy *= 0.97
+        this.x += this.vx
+        this.y += this.vy
+    }
+    draw(t){
+        const size = 2 + sin(t * 3 + this.randval) * 0.5
+        noStroke()
+        fill(255, 255, 255, 6)
+        circle(this.x, this.y, size + 2)
+        fill(this.r, this.g, this.b)
+        rect(this.x, this.y, size, size)
+    }
+}
+function createimg(img){
+    particles = []
+    const scale = min(width / img.width, height / img.height) * 0.7
+    const w = floor(img.width * scale)
+    const h = floor(img.height * scale)
+    const graphics = createGraphics(w, h)
+    graphics.pixelDensity(1)
+    graphics.image(img, 0, 0, w, h)
+    graphics.loadPixels()
+    const offsetx = width / 2 - w / 2
+    const offsety = height / 2 - h / 2
+    for(let y = 0; y < h; y += blueprint.sharpness){
+        for(let x = 0; x < w; x += blueprint.sharpness){
+            const i = 4 * (x + y * w)
+            if(graphics.pixels[i + 3] > 100){
+                particles.push(new particle(
+                    x + offsetx,
+                    y + offsety,
+                    graphics.pixels[i],
+                    graphics.pixels[i + 1],
+                    graphics.pixels[i + 2]
+                ))
+            }
+        }
+    }
+    mode = "form"
+    timer = 0
+}
+function createtext(txt){
+    particles = []
+    const graphics = createGraphics(width, height)
+    graphics.pixelDensity(1)
+    graphics.clear()
+    graphics.textAlign(CENTER, CENTER)
+    graphics.textSize(min(width, height) * 0.1)
+    graphics.textStyle(BOLD)
+    graphics.fill(255)
+    const maxWidth = width * 0.75
+    let words = txt.split(" ")
+    let line = ""
+    let lines = []
+    for(const word of words){
+        let testLine = line + word + " "
+        if(graphics.textWidth(testLine) > maxWidth && line.length > 0){
+            lines.push(line)
+            line = word + " "
+        }
+        else{
+            line = testLine
+        }
+    }
+    lines.push(line)
+    const lineHeight = min(width, height) * 0.1
+    const startY = height / 2 - ((lines.length - 1) * lineHeight) / 2
+    for(let i = 0; i < lines.length; i++){
+        graphics.text(lines[i], width / 2, startY + i * lineHeight)
+    }
+    graphics.loadPixels()
+    for(let y = 0; y < height; y += textblueprint.sharpness){
+        for(let x = 0; x < width; x += textblueprint.sharpness){
+            const i = 4 * (x + y * width)
+            if(graphics.pixels[i + 3] > 100){
+                particles.push(new particle(x, y, 255, 230, 240))
+            }
+        }
+    }
+    mode = "form"
+    timer = 0
+}
+function imgswitch(){
+    if(showtext){
+        imgindex = (imgindex + 1) % imgpushed.length
+        createimg(imgpushed[imgindex])
+        showtext = false
+    }
+    else{
+        createtext(poem[imgindex % poem.length])
+        showtext = true
+        console.log("Showing poem:", poem[imgindex % poem.length])
+    }
+}
+function modechange(){
+    timer++
+    if(mode == "form" && timer > blueprint.formtime){
+        mode = "still"
+        timer = 0
+    }
+    if(mode == "still" && timer > blueprint.stilltime){
+        mode = "swarm"
+        timer = 0
+    }
+    if(mode == "swarm" && timer > blueprint.swarmtime){
+        imgswitch()
+    }
+}
+function draw(){
+    const t = millis() * 0.001
+    modechange()
+    noStroke()
+    fill(0, 0, 0, 8)
+    rect(0, 0, width, height)
+    for(const p of particles){
+        p.update(t)
+        p.draw(t)
+    }
+}
+function windowResized(){
+    resizeCanvas(windowWidth, windowHeight)
+    if(showtext){
+        createtext(poem[imgindex % poem.length])
+    }
+    else if(imgpushed.length){
+        createimg(imgpushed[imgindex])
+    }
+}
+</script>
+</body>
+</html>
