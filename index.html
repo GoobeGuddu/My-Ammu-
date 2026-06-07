@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Ammu!</title>
 <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/addons/p5.sound.min.js"></script>
 <style>
 html, body{
     margin:0;
@@ -67,6 +68,7 @@ let particles = []
 let mode = "form"
 let timer = 0
 let showtext = false
+let song
 const blueprint = {
     sharpness: 5,
     formtime: 450,
@@ -78,6 +80,7 @@ const textblueprint = {
     sharpness: 3
 }
 function preload(){
+    song = loadSound("music.mpeg")
     for(const path of imgarr){
         imgpushed.push(loadImage(path))
     }
@@ -86,6 +89,9 @@ function setup(){
     pixelDensity(1)
     createCanvas(windowWidth, windowHeight)
     background(0)
+    if(song){
+        song.setVolume(0.5)
+    }
     if(imgpushed.length){
         createimg(imgpushed[0])
     }
@@ -268,6 +274,13 @@ function draw(){
         p.draw(t)
     }
 }
+function mousePressed(){
+    if(song && !song.isPlaying()){
+        userStartAudio()
+        song.loop()
+    }
+}
+
 function windowResized(){
     resizeCanvas(windowWidth, windowHeight)
     if(showtext){
